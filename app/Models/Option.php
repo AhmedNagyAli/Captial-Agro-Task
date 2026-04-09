@@ -43,6 +43,17 @@ class Option extends Model
     {
         return $this->hasMany(ConfigurationItem::class);
     }
+    public function media()
+    {
+        return $this->morphMany(Media::class, 'mediable')->ordered();
+    }
+
+    public function primaryImage()
+    {
+        return $this->morphOne(Media::class, 'mediable')
+            ->where('type', 'image')
+            ->orderBy('sort_order');
+    }
 
     public function dependsOnOptions(): BelongsToMany
     {
@@ -53,7 +64,7 @@ class Option extends Model
             'depends_on_option_id'
         );
     }
-    
+
     public function excludedOptions(): BelongsToMany
     {
         return $this->belongsToMany(
@@ -65,12 +76,12 @@ class Option extends Model
     }
     public function calculatePrice(float $basePrice = 0, int $quantity = 1): float
     {
-        $unitPrice = match($this->price_type) {
+        $unitPrice = match ($this->price_type) {
             self::PRICE_TYPE_FIXED => $this->price_value,
             self::PRICE_TYPE_PERCENTAGE => $basePrice * ($this->price_value / 100),
             default => 0,
         };
-        
+
         return $unitPrice * $quantity;
     }
 
