@@ -1,25 +1,31 @@
 <?php
 
+use App\Models\Product;
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-return new class extends Migration
-{
-    /**
-     * Run the migrations.
-     */
+return new class extends Migration {
     public function up(): void
     {
         Schema::create('option_groups', function (Blueprint $table) {
             $table->id();
+
+            $table->foreignIdFor(Product::class)
+                ->constrained()
+                ->cascadeOnDelete();
+
+            $table->string('name');
+
+            $table->boolean('is_required')->default(true);
+            $table->boolean('is_multiple')->default(false);
+
+            $table->unsignedInteger('sort_order')->default(0);
+
             $table->timestamps();
         });
     }
 
-    /**
-     * Reverse the migrations.
-     */
     public function down(): void
     {
         Schema::dropIfExists('option_groups');
