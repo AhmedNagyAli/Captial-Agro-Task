@@ -10,7 +10,6 @@ return new class extends Migration {
     {
         Schema::create('option_groups', function (Blueprint $table) {
             $table->id();
-            $table->foreignIdFor(Product::class)->constrained()->cascadeOnDelete();
             $table->string('name');
             $table->string('type')->default('single'); // single, multiple, text, number, file, color
             $table->integer('min_selections')->default(1);

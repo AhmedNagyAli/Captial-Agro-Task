@@ -31,14 +31,9 @@ class Product extends Model
         'is_featured' => 'boolean',
     ];
 
-    public function optionGroups(): HasMany
+    public function optionGroups()
     {
-        return $this->hasMany(OptionGroup::class);
-    }
-
-    public function configurations(): HasMany
-    {
-        return $this->hasMany(Configuration::class);
+        return $this->belongsToMany(OptionGroup::class, 'product_option_group');
     }
 
     public function getPriceAttribute(): float
