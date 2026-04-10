@@ -36,11 +36,6 @@ class Product extends Model
         return $this->belongsToMany(OptionGroup::class, 'product_option_group');
     }
 
-    public function configurations(): HasMany
-    {
-        return $this->hasMany(Configuration::class);
-    }
-
     public function getPriceAttribute(): float
     {
         return $this->sale_price ?? $this->base_price;
