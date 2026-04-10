@@ -24,7 +24,13 @@ const formatCurrency = (val) =>
     new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(parseFloat(val) || 0)
 
 const saveToStorage = () => {
-    if (!configId.value || Object.keys(selectedOptions.value).length === 0) return
+    if (!configId.value) return
+
+    if (Object.keys(selectedOptions.value).length === 0) {
+        clearStorage()
+        return
+    }
+
     localStorage.setItem(STORAGE_KEY, JSON.stringify({
         configId: configId.value,
         selections: selectedOptions.value,
@@ -80,6 +86,13 @@ const selectOption = async (optionId, groupId, option) => {
 const removeItem = (groupId) => {
     delete selectedOptions.value[groupId]
     selectedOptions.value = { ...selectedOptions.value }
+
+    if (Object.keys(selectedOptions.value).length === 0) {
+        clearStorage()
+        totalPrice.value = 0
+        return
+    }
+
     saveToStorage()
 }
 
