@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Web;
 
 use App\Http\Controllers\Controller;
+use App\Models\Configuration;
 use App\Models\Order;
 use App\Services\OrderService;
 use App\Services\CouponService;
@@ -10,6 +11,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
+use Symfony\Component\HttpFoundation\RedirectResponse;
 
 class OrderController extends Controller
 {
@@ -25,14 +27,14 @@ class OrderController extends Controller
     
     // Create an order from a configuration
     
-    public function store(Request $request): \Illuminate\Http\RedirectResponse
+    public function store(Request $request): RedirectResponse
     {
         $request->validate([
             'config_id' => 'required|exists:configurations,id'
         ]);
 
         try {
-            $config = \App\Models\Configuration::with('items')->findOrFail($request->config_id);
+            $config = Configuration::with('items')->findOrFail($request->config_id);
             
             // Validate configuration has items
             if ($config->items->isEmpty()) {
