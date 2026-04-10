@@ -33,7 +33,7 @@ class Product extends Model
 
     public function optionGroups()
     {
-        return $this->belongsToMany(OptionGroup::class);
+        return $this->belongsToMany(OptionGroup::class, 'product_option_group');
     }
 
     public function configurations(): HasMany
