@@ -12,10 +12,6 @@ return new class extends Migration {
         Schema::create('configurations', function (Blueprint $table) {
             $table->id();
 
-            $table->foreignIdFor(Product::class, 'product_id')
-                ->constrained()
-                ->cascadeOnDelete();
-
             $table->string('session_id')->nullable()->index();
             $table->string('token')->unique();
 

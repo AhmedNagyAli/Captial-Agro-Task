@@ -12,7 +12,6 @@ class Configuration extends Model
     use HasFactory;
 
     protected $fillable = [
-        'product_id',
         'session_id',
         'token',
         'total_price',
@@ -22,11 +21,6 @@ class Configuration extends Model
     protected $casts = [
         'total_price' => 'decimal:2',
     ];
-
-    public function product(): BelongsTo
-    {
-        return $this->belongsTo(Product::class);
-    }
 
     public function order(): BelongsTo
     {
