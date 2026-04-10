@@ -22,7 +22,6 @@ class OptionGroup extends Model
     protected $table = 'option_groups';
 
     protected $fillable = [
-        'product_id',
         'name',
         'type',
         'min_selections',
@@ -41,17 +40,16 @@ class OptionGroup extends Model
     ];
 
 
-    public function product(): BelongsTo
-    {
-        return $this->belongsTo(Product::class);
-    }
-
     public function options(): HasMany
     {
         return $this->hasMany(Option::class)->orderBy('sort_order');
     }
+    public function products()
+    {
+        return $this->belongsToMany(Product::class);
+    }
 
-    
+
     public function activeOptions(): HasMany
     {
         return $this->options()->where('is_active', true);
@@ -62,17 +60,17 @@ class OptionGroup extends Model
         return $this->hasMany(ConfigurationItem::class);
     }
 
- 
+
     // Check if this group allows multiple selections
- 
+
     public function isMultiple(): bool
     {
         return $this->type === self::TYPE_MULTIPLE;
     }
 
-   
+
     // Check if this group requires user input (text, number, file, color)
-    
+
     public function requiresInput(): bool
     {
         return in_array($this->type, [
@@ -83,9 +81,9 @@ class OptionGroup extends Model
         ]);
     }
 
-    
+
     // Check if this group selects from predefined options
-    
+
     public function hasPredefinedOptions(): bool
     {
         return in_array($this->type, [
@@ -94,9 +92,9 @@ class OptionGroup extends Model
         ]);
     }
 
-    
+
     // Validate a selection against this group's rules
-    
+
     public function validateSelection(array $selection): array
     {
         $errors = [];
@@ -105,15 +103,15 @@ class OptionGroup extends Model
         // For text input
         if ($this->type === self::TYPE_TEXT) {
             $text = $selection['user_input'] ?? '';
-            
+
             if (isset($rules['min_length']) && strlen($text) < $rules['min_length']) {
                 $errors[] = "{$this->name} must be at least {$rules['min_length']} characters";
             }
-            
+
             if (isset($rules['max_length']) && strlen($text) > $rules['max_length']) {
                 $errors[] = "{$this->name} cannot exceed {$rules['max_length']} characters";
             }
-            
+
             if (isset($rules['pattern']) && !preg_match($rules['pattern'], $text)) {
                 $errors[] = $rules['pattern_message'] ?? "{$this->name} has invalid format";
             }
@@ -122,15 +120,15 @@ class OptionGroup extends Model
         // For number input
         if ($this->type === self::TYPE_NUMBER) {
             $value = (float)($selection['user_input'] ?? 0);
-            
+
             if (isset($rules['min']) && $value < $rules['min']) {
                 $errors[] = "{$this->name} must be at least {$rules['min']}";
             }
-            
+
             if (isset($rules['max']) && $value > $rules['max']) {
                 $errors[] = "{$this->name} cannot exceed {$rules['max']}";
             }
-            
+
             if (isset($rules['step']) && fmod($value, $rules['step']) != 0) {
                 $errors[] = "{$this->name} must be in increments of {$rules['step']}";
             }
@@ -141,7 +139,7 @@ class OptionGroup extends Model
             if (isset($rules['max_size']) && ($selection['file_size'] ?? 0) > $rules['max_size']) {
                 $errors[] = "File size cannot exceed {$rules['max_size']} bytes";
             }
-            
+
             if (isset($rules['allowed_types']) && !in_array($selection['file_type'] ?? '', $rules['allowed_types'])) {
                 $errors[] = "File type not allowed. Allowed: " . implode(', ', $rules['allowed_types']);
             }
@@ -151,7 +149,7 @@ class OptionGroup extends Model
         if ($this->type === self::TYPE_COLOR) {
             $color = $selection['user_input'] ?? '';
             $pattern = '/^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/';
-            
+
             if (!preg_match($pattern, $color)) {
                 $errors[] = "{$this->name} must be a valid hex color code";
             }
@@ -192,29 +190,29 @@ class OptionGroup extends Model
     }
 
     // Scope a query to only include required groups
-    
+
     public function scopeRequired($query)
     {
         return $query->where('is_required', true);
     }
 
-    
+
     // Scope a query to only include optional groups
-    
+
     public function scopeOptional($query)
     {
         return $query->where('is_required', false);
     }
 
-    
+
     // Scope a query to order by sort order
-    
+
     public function scopeOrdered($query)
     {
         return $query->orderBy('sort_order')->orderBy('id');
     }
 
-    
+
 
     protected static function boot()
     {

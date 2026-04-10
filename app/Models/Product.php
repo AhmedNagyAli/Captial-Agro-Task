@@ -31,9 +31,9 @@ class Product extends Model
         'is_featured' => 'boolean',
     ];
 
-    public function optionGroups(): HasMany
+    public function optionGroups()
     {
-        return $this->hasMany(OptionGroup::class);
+        return $this->belongsToMany(OptionGroup::class);
     }
 
     public function configurations(): HasMany
