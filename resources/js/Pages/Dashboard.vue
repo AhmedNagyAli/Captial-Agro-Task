@@ -203,7 +203,7 @@ onMounted(async () => {
                         <h1 class="text-3xl font-black tracking-tight text-slate-900 uppercase">BUILD YOUR PC</h1>
                         <p class="mt-2 text-slate-500">Configure your dream machine with precision parts.</p>
                         
-                        <div class="mt-6 flex items-center gap-4 bg-white/80 backdrop-blur p-4 rounded-xl border border-slate-200 shadow-sm">
+                        <div class="mt-4 flex items-center gap-4 bg-white/80 backdrop-blur p-4 rounded-xl border border-slate-200 shadow-sm">
                             <div class="flex-1 h-2 bg-slate-100 rounded-full overflow-hidden">
                                 <div class="h-full bg-gradient-to-r from-slate-800 to-black transition-all duration-500"
                                      :style="{ width: `${completionPercentage}%` }"></div>
@@ -214,7 +214,7 @@ onMounted(async () => {
                         </div>
                     </header>
 
-                    <div v-for="group in groups" :key="group.id" class="mb-6 p-6 rounded-2xl bg-zinc-300 border border-slate-200 shadow-xl backdrop-blur-sm">
+                    <div v-for="group in groups" :key="group.id" class="mb-6 p-6 rounded-2xl bg-gray-300 border border-slate-200 shadow-xl backdrop-blur-sm">
                         <div class="flex items-center gap-3 mb-6">
                             <div class="h-8 w-1 bg-slate-900/80 rounded-full"></div>
                             <h2 class="text-lg font-bold text-slate-900 uppercase tracking-wide">
@@ -293,7 +293,7 @@ onMounted(async () => {
                         <div 
                             v-for="(option, groupId) in selectedOptions" 
                             :key="groupId" 
-                            class="group relative bg-slate-50/80 p-4 rounded-xl border border-slate-200 hover:border-slate-300 transition-all hover:shadow-sm"
+                            class="group relative bg-gray-300 p-4 rounded-xl border border-slate-200 hover:border-slate-300 transition-all hover:shadow-sm"
                         >
                             <button 
                                 @click="removeItem(groupId)"
