@@ -160,50 +160,28 @@ const showWelcomeAlert = () => {
         localStorage.setItem(VISITED_KEY, 'true')
     }
 }
+
 const autoRestoreBuild = async () => {
     const saved = loadFromStorage()
     
-    // Don't restore old selections - start fresh
-    if (!saved) {
-        await createConfiguration()
-        return
-    }
-    
-    // Optional: Ask user if they want to restore previous build
-    const hasVisited = localStorage.getItem(VISITED_KEY)
-    if (hasVisited && Object.keys(saved.selections).length > 0) {
-        const result = await Swal.fire({
-            title: 'Restore Previous Build?',
-            text: 'We found an unfinished build from your last session. Would you like to continue?',
-            icon: 'question',
-            showCancelButton: true,
-            confirmButtonColor: '#0f172a',
-            cancelButtonColor: '#64748b',
-            confirmButtonText: 'Yes, restore it',
-            cancelButtonText: 'Start fresh'
-        })
-        
-        if (result.isConfirmed) {
-            isRestoring.value = true
-            try {
-                configId.value = await createConfiguration()
-                for (const [groupId, option] of Object.entries(saved.selections)) {
-                    await axios.post(route('config.select'), {
-                        config_id: configId.value,
-                        option_id: option.id
-                    })
-                    selectedOptions.value = { ...selectedOptions.value, [groupId]: option }
-                }
-                totalPrice.value = saved.total
-            } finally {
-                isRestoring.value = false
+    // Always restore if there's a saved build - no confirmation
+    if (saved && Object.keys(saved.selections).length > 0) {
+        isRestoring.value = true
+        try {
+            configId.value = await createConfiguration()
+            for (const [groupId, option] of Object.entries(saved.selections)) {
+                await axios.post(route('config.select'), {
+                    config_id: configId.value,
+                    option_id: option.id
+                })
+                selectedOptions.value = { ...selectedOptions.value, [groupId]: option }
             }
-        } else {
-            // Start fresh
-            await createConfiguration()
-            clearStorage()
+            totalPrice.value = saved.total
+        } finally {
+            isRestoring.value = false
         }
     } else {
+        // No saved build, just create fresh config
         await createConfiguration()
     }
 }
@@ -216,7 +194,7 @@ onMounted(async () => {
 
 <template>
     <AppLayout>
-        <div class="relative flex min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-100">
+        <div class="relative flex min-h-screen bg-gray-250">
             
             <main class="flex-1 px-4 py-8 md:px-10 transition-all duration-500 ease-in-out" :class="{'mr-80': isSidebarOpen}">
                 <div class="max-w-5xl mx-auto">
@@ -236,7 +214,7 @@ onMounted(async () => {
                         </div>
                     </header>
 
-                    <div v-for="group in groups" :key="group.id" class="mb-14 p-6 rounded-2xl bg-zinc-300 border border-slate-200 shadow-xl backdrop-blur-sm">
+                    <div v-for="group in groups" :key="group.id" class="mb-6 p-6 rounded-2xl bg-zinc-300 border border-slate-200 shadow-xl backdrop-blur-sm">
                         <div class="flex items-center gap-3 mb-6">
                             <div class="h-8 w-1 bg-slate-900/80 rounded-full"></div>
                             <h2 class="text-lg font-bold text-slate-900 uppercase tracking-wide">
