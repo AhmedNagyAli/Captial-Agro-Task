@@ -383,7 +383,7 @@ onMounted(async () => {
                     <!-- Current Selections Summary -->
                     <div v-if="hasSelections" class="mb-8 bg-gradient-to-r from-gray-50 to-gray-100 rounded-lg p-4 shadow-sm">
                         <div class="flex justify-between items-center mb-3">
-                            <h3 class="text-lg font-semibold text-gray-800">Current Build</h3>
+                            <h3 class="text-lg font-semibold text-gray-800">Current selected items</h3>
                             <div class="flex items-center gap-3">
                                 <div class="text-sm text-gray-600">
                                     Progress: {{ completionPercentage }}%
@@ -472,7 +472,7 @@ onMounted(async () => {
                         <div class="flex justify-between items-center">
                             <div>
                                 <div class="text-sm text-gray-600">
-                                    {{ selectedCount }} of {{ totalGroupsCount }} groups selected
+                                    {{ selectedCount }} of {{ totalGroupsCount }} available options selected
                                 </div>
                                 <div v-if="hasSelections" class="text-2xl font-bold text-blue-600">
                                     {{ formattedTotal }}
