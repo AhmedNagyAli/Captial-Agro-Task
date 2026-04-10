@@ -3,6 +3,7 @@ import AppLayout from '@/Layouts/AppLayout.vue'
 import { ref, onMounted, computed, watch, shallowRef } from 'vue'
 import axios from 'axios'
 import { router } from '@inertiajs/vue3'
+import Swal from 'sweetalert2'
 
 const props = defineProps({
     groups: {
@@ -47,7 +48,6 @@ const saveToStorage = () => {
     
     try {
         localStorage.setItem(STORAGE_KEY, JSON.stringify(data))
-        console.log('Saved to storage:', data)
     } catch (error) {
         console.error('Failed to save to localStorage:', error)
     }
@@ -58,9 +58,7 @@ const loadFromStorage = () => {
         const data = localStorage.getItem(STORAGE_KEY)
         if (!data) return null
         
-        const parsed = JSON.parse(data)
-        console.log('Loaded from storage:', parsed)
-        return parsed
+        return JSON.parse(data)
     } catch (error) {
         console.error('Failed to load from localStorage:', error)
         return null
@@ -69,7 +67,6 @@ const loadFromStorage = () => {
 
 const clearStorage = () => {
     localStorage.removeItem(STORAGE_KEY)
-    console.log('Storage cleared')
 }
 
 // Computed Properties
@@ -108,7 +105,6 @@ const createConfiguration = async () => {
         const response = await axios.post(route('config.store'))
         configId.value = response.data.config_id
         error.value = null
-        console.log('Created new configuration:', configId.value)
         return response.data.config_id
     } catch (err) {
         error.value = 'Failed to initialize builder. Please refresh the page.'
@@ -147,6 +143,16 @@ const selectOption = async (optionId, groupId, option) => {
     } catch (err) {
         error.value = 'Failed to select option. Please try again.'
         console.error('Failed to select option:', err)
+        
+        Swal.fire({
+            icon: 'error',
+            title: 'Selection Failed',
+            text: 'Failed to select option. Please try again.',
+            toast: true,
+            position: 'top-end',
+            showConfirmButton: false,
+            timer: 2000
+        })
     } finally {
         isLoading.value = false
     }
@@ -156,10 +162,28 @@ const submitOrder = async () => {
     if (!configId.value) return
     
     if (!hasSelections.value) {
-        error.value = 'Please select at least one option before ordering'
-        setTimeout(() => { error.value = null }, 3000)
+        Swal.fire({
+            icon: 'warning',
+            title: 'No Selections',
+            text: 'Please select at least one option before ordering.',
+            confirmButtonColor: '#3085d6'
+        })
         return
     }
+    
+    // Only confirm order creation
+    const result = await Swal.fire({
+        title: 'Create Order?',
+        text: `Are you sure you want to create an order for ${formattedTotal.value}?`,
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonColor: '#22c55e',
+        cancelButtonColor: '#ef4444',
+        confirmButtonText: 'Yes, create order!',
+        cancelButtonText: 'Cancel'
+    })
+    
+    if (!result.isConfirmed) return
     
     try {
         // Clear storage before redirecting
@@ -168,9 +192,17 @@ const submitOrder = async () => {
         router.post(route('orders.store'), {
             config_id: configId.value
         })
+        
     } catch (err) {
         error.value = 'Failed to create order. Please try again.'
         console.error('Failed to create order:', err)
+        
+        Swal.fire({
+            icon: 'error',
+            title: 'Order Failed',
+            text: 'Failed to create order. Please try again.',
+            confirmButtonColor: '#3085d6'
+        })
     }
 }
 
@@ -179,9 +211,22 @@ const isSelected = (groupId, optionId) => {
 }
 
 const clearSelections = async () => {
-    if (!confirm('Clear all selections? This action cannot be undone.')) return
+    // Confirm clear all selections
+    const result = await Swal.fire({
+        title: 'Clear All Selections?',
+        text: 'This action cannot be undone. Your entire build will be reset.',
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#ef4444',
+        cancelButtonColor: '#6b7280',
+        confirmButtonText: 'Yes, clear everything!',
+        cancelButtonText: 'Cancel'
+    })
+    
+    if (!result.isConfirmed) return
     
     isLoading.value = true
+    
     try {
         // Clear local state
         selectedOptions.value = {}
@@ -194,9 +239,25 @@ const clearSelections = async () => {
         const newConfigId = await createConfiguration()
         configId.value = newConfigId
         
+        Swal.fire({
+            icon: 'success',
+            title: 'Build Reset!',
+            toast: true,
+            position: 'top-end',
+            showConfirmButton: false,
+            timer: 2000
+        })
+        
     } catch (err) {
         error.value = 'Failed to clear selections'
         console.error('Failed to clear selections:', err)
+        
+        Swal.fire({
+            icon: 'error',
+            title: 'Clear Failed',
+            text: 'Failed to clear selections. Please try again.',
+            confirmButtonColor: '#ef4444'
+        })
     } finally {
         isLoading.value = false
     }
@@ -207,17 +268,15 @@ const autoRestoreBuild = async () => {
     const saved = loadFromStorage()
     
     if (!saved || !saved.selections || Object.keys(saved.selections).length === 0) {
-        console.log('No saved build found, starting fresh')
         await createConfiguration()
         return
     }
     
-    console.log('Found saved build, attempting to restore...')
     isRestoring.value = true
     isLoading.value = true
     
     try {
-        // First, validate that saved options still exist
+        // Validate that saved options still exist
         const validSelections = {}
         let hasValidSelections = false
         
@@ -228,16 +287,11 @@ const autoRestoreBuild = async () => {
                 if (optionExists) {
                     validSelections[groupId] = option
                     hasValidSelections = true
-                } else {
-                    console.warn(`Option ${option.id} no longer exists in group ${groupId}`)
                 }
-            } else {
-                console.warn(`Group ${groupId} no longer exists`)
             }
         }
         
         if (!hasValidSelections) {
-            console.log('No valid selections found, starting fresh')
             clearStorage()
             await createConfiguration()
             return
@@ -255,7 +309,6 @@ const autoRestoreBuild = async () => {
                     option_id: option.id
                 })
                 
-                // Update local state
                 selectedOptions.value = {
                     ...selectedOptions.value,
                     [groupId]: option
@@ -271,8 +324,6 @@ const autoRestoreBuild = async () => {
         
         // Save restored build to storage
         saveToStorage()
-        
-        console.log('Build restored successfully!')
         
     } catch (err) {
         console.error('Failed to restore build:', err)
@@ -293,10 +344,6 @@ watch([selectedOptions, totalPrice], () => {
 
 // Lifecycle
 onMounted(async () => {
-    console.log('Dashboard mounted, checking for saved build...')
-    console.log('Groups available:', props.groups?.length)
-    
-    // Auto-restore or create new
     await autoRestoreBuild()
 })
 </script>
@@ -306,11 +353,6 @@ onMounted(async () => {
         <div class="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
             <div class="px-4 py-6 sm:px-0">
                 
-                <!-- Loading Indicator during restore -->
-                <div v-if="isRestoring" class="text-center py-12">
-                    <div class="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mb-4"></div>
-                    <p class="text-gray-600">Restoring your saved build...</p>
-                </div>
                 
                 <!-- Error Alert -->
                 <div v-if="error" class="mb-6 bg-red-50 border-l-4 border-red-500 p-4 rounded">
