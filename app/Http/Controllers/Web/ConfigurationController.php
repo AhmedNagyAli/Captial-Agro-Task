@@ -3,61 +3,104 @@
 namespace App\Http\Controllers\Web;
 
 use App\Http\Controllers\Controller;
-use App\Models\Configuration;
-use App\Models\ConfigurationItem;
-use App\Models\Option;
+use App\Http\Requests\ConfigurationSelectRequest;
+use App\Services\ConfigurationService;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Str;
 
 class ConfigurationController extends Controller
 {
-    public function store()
-    {
-        $config = Configuration::create([
-            'session_id' => session()->getId(),
-            'token' => Str::uuid(),
-            'total_price' => 0,
-        ]);
+    protected ConfigurationService $configurationService;
 
-        return response()->json([
-            'config_id' => $config->id
-        ]);
+    public function __construct(ConfigurationService $configurationService)
+    {
+        $this->configurationService = $configurationService;
     }
 
-    public function select(Request $request)
+    // Create a new configuration
+    
+    public function store(): JsonResponse
+    {
+        try {
+            $config = $this->configurationService->createConfiguration();
+
+            return response()->json([
+                'success' => true,
+                'config_id' => $config->id
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'error' => 'Failed to create configuration'
+            ], 500);
+        }
+    }
+
+    
+    // Select an option for a configuration
+    
+    public function select(ConfigurationSelectRequest $request): JsonResponse
+    {
+        try {
+            $config = $this->configurationService->getConfigurationWithItems($request->config_id);
+            
+            if (!$config) {
+                return response()->json([
+                    'success' => false,
+                    'error' => 'Configuration not found'
+                ], 404);
+            }
+
+            $config = $this->configurationService->selectOption(
+                $config,
+                $request->getOption(),
+                $request->getQuantity()
+            );
+
+            return response()->json([
+                'success' => true,
+                'total' => $config->total_price,
+                'items' => $config->items
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'error' => 'Failed to select option: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    
+    // Clear all selections from a configuration
+    
+    public function clear(Request $request): JsonResponse
     {
         $request->validate([
-            'config_id' => 'required|exists:configurations,id',
-            'option_id' => 'required|exists:options,id',
-            'quantity' => 'sometimes|integer|min:1|max:99' // Add quantity validation
+            'config_id' => 'required|exists:configurations,id'
         ]);
 
-        $config = Configuration::findOrFail($request->config_id);
-        $option = Option::with('optionGroup')->findOrFail($request->option_id);
-        $quantity = $request->input('quantity', 1);
+        try {
+            $config = $this->configurationService->getConfigurationWithItems($request->config_id);
+            
+            if (!$config) {
+                return response()->json([
+                    'success' => false,
+                    'error' => 'Configuration not found'
+                ], 404);
+            }
 
-        // remove old selection in same group
-        $config->items()
-            ->where('option_group_id', $option->option_group_id)
-            ->delete();
+            $config = $this->configurationService->clearConfiguration($config);
 
-        // add new with quantity
-        ConfigurationItem::create([
-            'configuration_id' => $config->id,
-            'option_group_id' => $option->option_group_id,
-            'option_id' => $option->id,
-            'option_group_name' => $option->optionGroup->name,
-            'option_name' => $option->name,
-            'price' => $option->calculatePrice(),
-            'quantity' => $quantity,
-        ]);
-
-        $config->load('items');
-        $config->recalculateTotal();
-
-        return response()->json([
-            'total' => $config->total_price,
-            'items' => $config->items // Return items for better UI state
-        ]);
+            return response()->json([
+                'success' => true,
+                'message' => 'Configuration cleared successfully',
+                'total' => $config->total_price
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'error' => 'Failed to clear configuration'
+            ], 500);
+        }
     }
 }
