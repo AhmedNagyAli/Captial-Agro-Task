@@ -18,6 +18,7 @@ const error = ref(null)
 const isRestoring = ref(false)
 
 const STORAGE_KEY = 'pc_builder_selections'
+const VISITED_KEY = 'pc_builder_visited'
 
 const formatCurrency = (val) =>
     new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(parseFloat(val) || 0)
@@ -106,32 +107,112 @@ const clearSelections = async () => {
     }
 }
 
+const showWelcomeAlert = () => {
+    const hasVisited = localStorage.getItem(VISITED_KEY)
+
+    if (!hasVisited) {
+        Swal.fire({
+            html: `
+                <div style="text-align:left; font-family:system-ui, -apple-system, sans-serif;">
+                    
+                    <h2 style="font-size:20px; font-weight:800; color:#0f172a; margin-bottom:14px; letter-spacing:-0.01em;">
+                        Demonstration Interface
+                    </h2>
+
+                    <p style="font-size:14.5px; font-weight:600; color:#475569; line-height:1.7; margin-bottom:20px;">
+                        This interface represents a modular configuration system. 
+                        While the current example displays PC components, the underlying structure 
+                        is designed for broad application across any configurable product or service.
+                    </p>
+
+                    <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:12px; padding:6px; margin-bottom:10px;">
+                        <p style="font-size:15px; font-weight:800; color:#0f172a; margin-bottom:10px; text-transform:uppercase; letter-spacing:0.05em;">
+                            Applicable Use Cases
+                        </p>
+
+                        <ul style="margin:0; padding-left:18px; font-size:13.5px; font-weight:500; color:#334155; line-height:1.8;">
+                            <li>Electronics configuration systems</li>
+                            <li>Food customization workflows (multi-option ordering)</li>
+                            <li>Service bundles and packaged offerings</li>
+                            <li>General-purpose product configurators</li>
+                        </ul>
+                    </div>
+
+                    <div style="border-top:1px solid #e2e8f0; margin:8px 0;"></div>
+
+                    <p style="font-size:12.5px; font-weight:800; color:#334155; line-height:1.6;">
+                        The focus is structural flexibility, not the displayed category.
+                    </p>
+
+                </div>
+            `,
+            confirmButtonColor: '#0f172a',
+            confirmButtonText: 'Continue',
+            background: '#ffffff',
+            allowOutsideClick: false,
+            customClass: {
+                popup: 'rounded-2xl shadow-xl max-w-xl',
+                htmlContainer: 'p-0',
+                confirmButton: 'px-7 py-2.5 rounded-lg font-semibold text-sm tracking-wide'
+            }
+        })
+
+        localStorage.setItem(VISITED_KEY, 'true')
+    }
+}
 const autoRestoreBuild = async () => {
     const saved = loadFromStorage()
-    if (!saved) return await createConfiguration()
-
-    isRestoring.value = true
-    try {
-        configId.value = await createConfiguration()
-
-        for (const [groupId, option] of Object.entries(saved.selections)) {
-            await axios.post(route('config.select'), {
-                config_id: configId.value,
-                option_id: option.id
-            })
-            selectedOptions.value = { ...selectedOptions.value, [groupId]: option }
+    
+    // Don't restore old selections - start fresh
+    if (!saved) {
+        await createConfiguration()
+        return
+    }
+    
+    // Optional: Ask user if they want to restore previous build
+    const hasVisited = localStorage.getItem(VISITED_KEY)
+    if (hasVisited && Object.keys(saved.selections).length > 0) {
+        const result = await Swal.fire({
+            title: 'Restore Previous Build?',
+            text: 'We found an unfinished build from your last session. Would you like to continue?',
+            icon: 'question',
+            showCancelButton: true,
+            confirmButtonColor: '#0f172a',
+            cancelButtonColor: '#64748b',
+            confirmButtonText: 'Yes, restore it',
+            cancelButtonText: 'Start fresh'
+        })
+        
+        if (result.isConfirmed) {
+            isRestoring.value = true
+            try {
+                configId.value = await createConfiguration()
+                for (const [groupId, option] of Object.entries(saved.selections)) {
+                    await axios.post(route('config.select'), {
+                        config_id: configId.value,
+                        option_id: option.id
+                    })
+                    selectedOptions.value = { ...selectedOptions.value, [groupId]: option }
+                }
+                totalPrice.value = saved.total
+            } finally {
+                isRestoring.value = false
+            }
+        } else {
+            // Start fresh
+            await createConfiguration()
+            clearStorage()
         }
-
-        totalPrice.value = saved.total
-    } finally {
-        isRestoring.value = false
+    } else {
+        await createConfiguration()
     }
 }
 
-onMounted(autoRestoreBuild)
+onMounted(async () => {
+    await autoRestoreBuild()
+    showWelcomeAlert()
+})
 </script>
-
-<!-- ONLY visual refinements: layered whites + subtle borders/shadows -->
 
 <template>
     <AppLayout>
@@ -144,7 +225,6 @@ onMounted(autoRestoreBuild)
                         <h1 class="text-3xl font-black tracking-tight text-slate-900 uppercase">BUILD YOUR PC</h1>
                         <p class="mt-2 text-slate-500">Configure your dream machine with precision parts.</p>
                         
-                        <!-- slightly tinted white -->
                         <div class="mt-6 flex items-center gap-4 bg-white/80 backdrop-blur p-4 rounded-xl border border-slate-200 shadow-sm">
                             <div class="flex-1 h-2 bg-slate-100 rounded-full overflow-hidden">
                                 <div class="h-full bg-gradient-to-r from-slate-800 to-black transition-all duration-500"
@@ -176,7 +256,6 @@ onMounted(autoRestoreBuild)
                                     : 'border-slate-200 bg-white/90 hover:bg-white hover:border-slate-300 shadow-sm hover:shadow-md hover:-translate-y-0.5'
                                 ]"
                             >
-                                <!-- soft layered white highlight -->
                                 <div class="absolute inset-0 opacity-0 group-hover:opacity-100 transition bg-gradient-to-br from-white/40 via-slate-50/40 to-transparent"></div>
 
                                 <div class="relative flex justify-between items-start mb-2">
@@ -201,7 +280,6 @@ onMounted(autoRestoreBuild)
                 </div>
             </main>
 
-            <!-- sidebar: slightly darker white -->
             <aside 
                 class="fixed right-0 top-0 h-full bg-white/95 backdrop-blur border-l border-slate-200 transition-transform duration-500 ease-in-out z-40 shadow-2xl"
                 :class="[isSidebarOpen ? 'translate-x-0 w-80' : 'translate-x-full w-80']"
@@ -231,9 +309,9 @@ onMounted(autoRestoreBuild)
                                 </svg>
                             </div>
                             <p class="text-sm text-slate-400 font-medium">No parts selected yet.</p>
+                            <p class="text-xs text-slate-300 mt-1">Click on any component to start building</p>
                         </div>
 
-                        <!-- inner cards: even softer white -->
                         <div 
                             v-for="(option, groupId) in selectedOptions" 
                             :key="groupId" 
