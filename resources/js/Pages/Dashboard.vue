@@ -4,10 +4,21 @@ import { ref, onMounted, computed, shallowRef } from 'vue'
 import axios from 'axios'
 import { router } from '@inertiajs/vue3'
 import Swal from 'sweetalert2'
+import { watch } from 'vue'
 
 const props = defineProps({
-    groups: { type: Array, required: true, default: () => [] }
+    groups: { type: Array, required: true }
 })
+
+const groups = ref([])
+
+watch(
+    () => props.groups,
+    (val) => {
+        groups.value = val || []
+    },
+    { immediate: true }
+)
 
 const isSidebarOpen = ref(false)
 const configId = ref(null)
@@ -45,7 +56,7 @@ const clearStorage = () => localStorage.removeItem(STORAGE_KEY)
 const hasSelections = computed(() => Object.keys(selectedOptions.value).length > 0)
 const formattedTotal = computed(() => formatCurrency(totalPrice.value))
 const completionPercentage = computed(() => {
-    if (!props.groups.length) return 0
+    if (!groups.value.length) return 0
     return Math.round((Object.keys(selectedOptions.value).length / props.groups.length) * 100)
 })
 
@@ -227,7 +238,7 @@ onMounted(async () => {
                         </div>
                     </header>
 
-                    <div v-for="group in groups" :key="group.id" class="mb-6 p-6 rounded-2xl bg-gray-300 border border-slate-200 shadow-xl backdrop-blur-sm">
+                    <div v-for="group in props.groups" :key="group.id" class="mb-6 p-6 rounded-2xl bg-gray-300 border border-slate-200 shadow-xl backdrop-blur-sm">
                         <div class="flex items-center gap-3 mb-6">
                             <div class="h-8 w-1 bg-slate-900/80 rounded-full"></div>
                             <h2 class="text-lg font-bold text-slate-900 uppercase tracking-wide">

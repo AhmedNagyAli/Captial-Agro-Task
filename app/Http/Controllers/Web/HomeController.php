@@ -14,7 +14,10 @@ class HomeController extends Controller
     public function index()
     {
         $groups = Cache::remember('builder.catalog', 3600, function () {
-            return OptionGroup::with('options')->ordered()->get();
+            return OptionGroup::with('options')
+                ->ordered()
+                ->get()
+                ->toArray();
         });
 
         return Inertia::render('Dashboard', [
