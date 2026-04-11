@@ -161,7 +161,7 @@ const getTotalAfterDiscount = computed(() => {
                             </div>
                             
                             <div class="p-6 space-y-6">
-                                <div v-for="(items, groupName) in groupedItems" :key="groupName" class="border-b border-slate-100 last:border-0 pb-4 last:pb-0">
+                                <div v-for="(items, groupName) in groupedItems" :key="groupName" class="border-b border-slate-300 last:border-0 pb-4 last:pb-0">
                                     <h3 class="text-sm font-bold text-slate-900 uppercase tracking-wider mb-3">{{ groupName }}</h3>
                                     <div class="space-y-2">
                                         <div v-for="item in items" :key="item.id" class="flex justify-between items-center py-2 hover:bg-slate-50 rounded-lg px-2 transition-colors">
