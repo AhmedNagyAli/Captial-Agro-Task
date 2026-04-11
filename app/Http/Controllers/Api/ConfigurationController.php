@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Models\Option;
 use App\Services\ConfigurationService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -66,17 +67,18 @@ class ConfigurationController extends Controller
 
         try {
             $config = $this->configurationService->getConfigurationWithItems($configId);
-            
+
             if (!$config) {
                 return response()->json([
                     'success' => false,
                     'error' => 'Configuration not found'
                 ], 404);
             }
+            $option = Option::findOrFail($request->option_id);
 
             $config = $this->configurationService->selectOption(
                 $config,
-                $request->option_id,
+                $option,
                 $request->quantity ?? 1
             );
 
@@ -97,7 +99,7 @@ class ConfigurationController extends Controller
     {
         try {
             $config = $this->configurationService->getConfigurationWithItems($configId);
-            
+
             if (!$config) {
                 return response()->json([
                     'success' => false,
@@ -116,6 +118,32 @@ class ConfigurationController extends Controller
             return response()->json([
                 'success' => false,
                 'error' => 'Failed to clear configuration'
+            ], 500);
+        }
+    }
+    public function removeOption(int $configId, int $groupId): JsonResponse
+    {
+        try {
+            $config = $this->configurationService->getConfigurationWithItems($configId);
+
+            if (!$config) {
+                return response()->json([
+                    'success' => false,
+                    'error' => 'Configuration not found'
+                ], 404);
+            }
+
+            $config = $this->configurationService->removeOption($config, $groupId);
+
+            return response()->json([
+                'success' => true,
+                'total' => $config->total_price,
+                'items' => $config->items
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'error' => 'Failed to remove option: ' . $e->getMessage()
             ], 500);
         }
     }
@@ -147,6 +175,4 @@ class ConfigurationController extends Controller
             ], 500);
         }
     }
-
-
 }
