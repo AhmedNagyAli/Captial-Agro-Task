@@ -434,6 +434,9 @@ Fix:
 ## Setup
 
 ```bash
+git clone https://github.com/AhmedNagyAli/Captial-Agro-Task.git
+Cd Captial-Agro-Task
+
 composer install
 npm install
 
