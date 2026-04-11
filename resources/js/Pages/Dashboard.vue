@@ -321,7 +321,7 @@ onMounted(async () => {
                             Your Selections
                         </h3>
                         <button @click="isSidebarOpen = false"
-                                class="p-2 hover:bg-slate-200 rounded-lg transition-colors">
+                                class="p-2 hover:bg-slate-200 rounded-lg transition-colors close-sidebar-btn">
                             <svg class="w-5 h-5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                       d="M6 18L18 6M6 6l12 12"/>
@@ -349,7 +349,7 @@ onMounted(async () => {
                         >
                             <button 
                                 @click="removeItem(groupId)"
-                                class="absolute -top-2 -right-2 bg-white border border-slate-200 rounded-full p-1 opacity-0 group-hover:opacity-100 hover:text-red-500"
+                                class="absolute -top-2 -right-2 bg-white border border-slate-200 rounded-full p-1 opacity-0 group-hover:opacity-100 hover:text-red-500 remove-item-btn"
                             >
                                 <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -432,5 +432,21 @@ onMounted(async () => {
 }
 .animate-bounce-subtle {
     animation: bounce-subtle 2s infinite;
+}
+
+/* Fix for mobile: Make close button always visible on small screens */
+@media (max-width: 768px) {
+    .close-sidebar-btn {
+        opacity: 1 !important;
+        background-color: #f1f5f9;
+        padding: 8px;
+        border-radius: 8px;
+    }
+    
+    .remove-item-btn {
+        opacity: 1 !important;
+        background-color: white;
+        border-color: #e2e8f0;
+    }
 }
 </style>
