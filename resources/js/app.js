@@ -6,7 +6,7 @@ import { ZiggyVue } from "ziggy-js";
 
 
 createInertiaApp({
-    title: (title) => `${title} - ERP System`,
+    title: (title) => `${title} - Capital Agro`,
     resolve: (name) =>
         resolvePageComponent(
             `./Pages/${name}.vue`,
