@@ -14,8 +14,8 @@ return new class extends Migration {
             $table->id();
 
             $table->foreignIdFor(Configuration::class, 'configuration_id')
-                ->constrained()
-                ->cascadeOnDelete();
+            ->constrained()
+            ->cascadeOnDelete();
 
             $table->foreignIdFor(OptionGroup::class, 'option_group_id')
                 ->constrained()
